@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { Task, Profile } from '../types';
 import { User, ArrowLeft, Edit2, Check, X, Calendar, CheckCircle2, Download, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { cn } from '../lib/utils';
+import { cn, formatLocalDateKey, parseLocalDateKey } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import Markdown from 'react-markdown';
@@ -48,10 +48,7 @@ export default function ProfilePage({ tasks, profile, onUpdateProfile, onUpdateT
     if (!selectedDate) return [];
     return tasks.filter(task => {
       if (!task.completed || !task.closedAt) return false;
-      const date = new Date(task.closedAt);
-      date.setHours(0, 0, 0, 0);
-      const dateStr = date.toISOString().split('T')[0];
-      return dateStr === selectedDate;
+      return formatLocalDateKey(new Date(task.closedAt)) === selectedDate;
     });
   }, [tasks, selectedDate]);
 
@@ -94,7 +91,7 @@ export default function ProfilePage({ tasks, profile, onUpdateProfile, onUpdateT
         const date = new Date(task.closedAt);
         date.setHours(0, 0, 0, 0);
         if (date >= startDate) {
-          const dateStr = date.toISOString().split('T')[0];
+          const dateStr = formatLocalDateKey(date);
           data.set(dateStr, (data.get(dateStr) || 0) + 1);
         }
       }
@@ -105,7 +102,7 @@ export default function ProfilePage({ tasks, profile, onUpdateProfile, onUpdateT
     for (let i = 0; i < finalDays; i++) {
       const current = new Date(startDate);
       current.setDate(startDate.getDate() + i);
-      const dateStr = current.toISOString().split('T')[0];
+      const dateStr = formatLocalDateKey(current);
       const count = data.get(dateStr) || 0;
       if (count > max) max = count;
       grid.push({ date: current, count });
@@ -233,11 +230,11 @@ export default function ProfilePage({ tasks, profile, onUpdateProfile, onUpdateT
                     <Tooltip.Root key={dIdx}>
                       <Tooltip.Trigger asChild>
                         <div
-                          onClick={() => setSelectedDate(day.date.toISOString().split('T')[0])}
+                          onClick={() => setSelectedDate(formatLocalDateKey(day.date))}
                           className={cn(
                             "w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-sm transition-colors cursor-pointer hover:ring-2 ring-offset-1 ring-offset-white dark:ring-offset-slate-900 ring-slate-300 dark:ring-slate-600", 
                             getColorClass(day.count, maxCount),
-                            selectedDate === day.date.toISOString().split('T')[0] && "ring-2 ring-blue-500 dark:ring-blue-400"
+                            selectedDate === formatLocalDateKey(day.date) && "ring-2 ring-blue-500 dark:ring-blue-400"
                           )}
                         />
                       </Tooltip.Trigger>
@@ -277,7 +274,7 @@ export default function ProfilePage({ tasks, profile, onUpdateProfile, onUpdateT
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                     <Calendar size={16} className="text-blue-500" />
-                    Tasks on {new Date(selectedDate).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                    Tasks on {parseLocalDateKey(selectedDate).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                   </h4>
                   <span className="text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-1 rounded-full">
                     {selectedTasks.length} {selectedTasks.length === 1 ? 'Task' : 'Tasks'}
